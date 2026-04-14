@@ -6,3 +6,4 @@ anthropic
 elevenlabs
 python-dotenv
 httpx
+aiofiles
