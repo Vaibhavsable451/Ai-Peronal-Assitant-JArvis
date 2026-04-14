@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>JARVIS</title>
+<style>
+  *{margin:0;padding:0;box-sizing:border-box}
+  @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@400;700&family=Share+Tech+Mono&display=swap');
+
+  body {
+    background: #000;
+    color: #4af;
+    font-family: 'Share Tech Mono', monospace;
+    height: 100vh;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('desktop-wallpaper-jarvis-iron-man-iphone-list-friday-iron-man.jpg') no-repeat center center fixed;
+    background-size: cover;
+  }
+
+  /* Futuristic HUD Grid */
+  body::before {
+    content: "";
+    position: absolute;
+    width: 200%;
+    height: 200%;
+    top: -50%;
+    left: -50%;
+    background-image: 
+      linear-gradient(rgba(0, 74, 150, 0.1) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(0, 74, 150, 0.1) 1px, transparent 1px);
+    background-size: 50px 50px;
+    transform: perspective(500px) rotateX(60deg);
+    z-index: -1;
+    animation: grid-scroll 20s linear infinite;
+  }
+
+  @keyframes grid-scroll {
+    from { transform: perspective(500px) rotateX(60deg) translateY(0); }
+    to { transform: perspective(500px) rotateX(60deg) translateY(50px); }
+  }
+
+  #orb-container {
+    width: 320px; 
+    height: 320px; 
+    position: relative;
+    border-radius: 50%;
+    box-shadow: 0 0 100px rgba(0, 150, 255, 0.15);
+  }
+
+  /* HUD Decoration Rings */
+  .hud-ring {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    border: 1px solid rgba(0, 150, 255, 0.2);
+    border-radius: 50%;
+  }
+  .ring-1 { width: 380px; height: 380px; border-style: dashed; animation: rotate 20s linear infinite; }
+  .ring-2 { width: 420px; height: 420px; border-width: 2px; border-color: rgba(0, 150, 255, 0.05); }
+  .ring-3 { width: 340px; height: 340px; border-left-color: #4af; border-width: 3px; animation: rotate 10s linear infinite reverse; }
+
+  @keyframes rotate { to { transform: translate(-50%, -50%) rotate(360deg); } }
+
+  canvas { display: block; z-index: 10; }
+
+  #status {
+    margin-top: 40px;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 14px;
+    letter-spacing: 5px;
+    text-transform: uppercase;
+    color: #4af;
+    text-shadow: 0 0 10px #4af;
+    height: 20px;
+  }
+
+  #transcript { 
+    margin-top: 15px; 
+    font-size: 16px; 
+    color: #8cf; 
+    max-width: 600px; 
+    text-align: center;
+    opacity: 0.7;
+    font-style: italic;
+  }
+
+  #reply { 
+    margin-top: 10px; 
+    font-size: 18px; 
+    color: #fff; 
+    max-width: 700px; 
+    text-align: center; 
+    min-height: 24px;
+    line-height: 1.5;
+    text-shadow: 0 0 5px rgba(255,255,255,0.3);
+  }
+
+  #controls {
+    position: fixed;
+    bottom: 50px;
+    display: flex;
+    gap: 24px;
+    align-items: center;
+    background: rgba(0, 20, 40, 0.6);
+    padding: 15px 30px;
+    border-radius: 50px;
+    border: 1px solid rgba(0, 150, 255, 0.3);
+    backdrop-filter: blur(10px);
+  }
+
+  button {
+    background: transparent;
+    border: none;
+    color: #4af;
+    font-family: 'Orbitron', sans-serif;
+    font-size: 11px;
+    letter-spacing: 2px;
+    cursor: pointer;
+    transition: all 0.3s;
+    text-transform: uppercase;
+  }
+  button:hover { color: #fff; transform: scale(1.1); }
+
+  #voice-btn {
+    width: 80px;
+    height: 80px;
+    border-radius: 50%;
+    border: 3px solid #4af;
+    background: rgba(0, 120, 255, 0.1);
+    font-size: 28px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 20px rgba(0, 150, 255, 0.3);
+    transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
+  #voice-btn.listening {
+    border-color: #0f9;
+    color: #0f9;
+    background: rgba(0, 255, 150, 0.1);
+    animation: pulse 1.5s ease-in-out infinite;
+    transform: scale(1.1);
+  }
+
+  @keyframes pulse { 
+    0%, 100% { box-shadow: 0 0 0 0 rgba(0, 255, 150, 0.4); } 
+    50% { box-shadow: 0 0 0 20px rgba(0, 255, 150, 0); } 
+  }
+
+  #settings-icon {
+    position: fixed;
+    top: 30px;
+    right: 30px;
+    font-size: 24px;
+    cursor: pointer;
+    opacity: 0.5;
+    transition: 0.3s;
+  }
+  #settings-icon:hover { opacity: 1; transform: rotate(90deg); }
+
+  #panel {
+    display: none;
+    position: fixed;
+    top: 80px;
+    right: 30px;
+    background: rgba(0, 10, 25, 0.95);
+    border: 1px solid #4af;
+    border-radius: 12px;
+    padding: 25px;
+    width: 320px;
+    z-index: 100;
+    box-shadow: 0 0 40px rgba(0, 0, 0, 0.8);
+  }
+  #panel.open { display: block; animation: slideIn 0.3s ease-out; }
+
+  @keyframes slideIn { from { opacity: 0; transform: translateX(20px); } }
+
+  label { display: block; margin-top: 15px; font-size: 11px; color: #8cf; text-transform: uppercase; }
+  input, select {
+    width: 100%;
+    margin-top: 6px;
+    background: #001;
+    border: 1px solid rgba(0, 150, 255, 0.4);
+    color: #fff;
+    padding: 8px;
+    border-radius: 4px;
+    font-family: inherit;
+  }
+
+  /* Floating HUD Widgets */
+  .hud-widget {
+    position: fixed;
+    border: 1px solid rgba(0, 150, 255, 0.3);
+    background: rgba(0, 20, 40, 0.4);
+    padding: 10px;
+    font-size: 10px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+    pointer-events: none;
+  }
+  .widget-left { left: 40px; bottom: 150px; width: 140px; }
+  .widget-right { right: 40px; top: 150px; width: 160px; text-align: right; }
+  .pulse-text { animation: blink 2s infinite; color: #0f9; }
+  @keyframes blink { 0%, 100% { opacity: 1; } 50% { opacity: 0.3; } }
+
+  .power-meter {
+    position: fixed;
+    right: 40px;
+    bottom: 150px;
+    width: 100px;
+    height: 100px;
+    border: 4px double #4af;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 12px;
+    font-weight: bold;
+    color: #4af;
+    box-shadow: 0 0 15px rgba(0, 150, 255, 0.3);
+  }
+  .power-meter::after {
+    content: "";
+    position: absolute;
+    width: 80%; height: 80%;
+    border: 2px solid rgba(0, 150, 255, 0.1);
+    border-radius: 50%;
+    animation: rotate 5s linear infinite;
+  }
+</style>
+</head>
+<body>
+
+<div class="hud-ring ring-1"></div>
+<div class="hud-ring ring-2"></div>
+<div class="hud-ring ring-3"></div>
+
+<div class="hud-widget widget-left">
+  <div style="color:#4af; font-weight:bold;">SATELLITE LINK</div>
+  <div class="pulse-text">ACTIVE: [UP-772]</div>
+  <div style="margin-top:5px; height:2px; background:rgba(0,120,255,0.3); width:80%;"></div>
+  <div style="margin-top:2px;">ENCRYPTION: 128-BIT</div>
+</div>
+
+<div class="hud-widget widget-right">
+  <div style="color:#4af; font-weight:bold;">ATMOSPHERIC ANALYSIS</div>
+  <div>OXYGEN: 20.9%</div>
+  <div>NITROGEN: 78.1%</div>
+  <div style="color:#f44;">RAD LEVEL: 0.02 mSv</div>
+</div>
+
+<div class="power-meter">
+  <span>94%<br/>POWER</span>
+</div>
+
+<div id="cmd-list" style="position:fixed; left:40px; top:40px; opacity:0.6; font-size:12px;">
+  <div style="color:#4af; margin-bottom:10px; border-bottom:1px solid #4af; padding-bottom:5px;">SYSTEM COMMANDS</div>
+  <div>> "PLAY BOHEMIAN RHAPSODY"</div>
+  <div>> "SEARCH YOUTUBE FOR IRON MAN"</div>
+  <div>> "OPEN WHATSAPP"</div>
+  <div>> "WHAT IS THE WEATHER"</div>
+  <div>> "OPEN GOOGLE MAPS"</div>
+</div>
+
+<div id="orb-container"><canvas id="orb"></canvas></div>
+<div id="status">SYSTEM IDLE</div>
+<div id="transcript">Ready for input...</div>
+<div id="reply"></div>
+
+<div id="controls">
+  <button onclick="clearMemory()">Purge Memory</button>
+  <button onclick="toggleListen()" id="voice-btn">🎤</button>
+  <button onclick="checkHealth()">Diagnostics</button>
+</div>
+
+<div id="settings-icon" onclick="document.getElementById('panel').classList.toggle('open')">⚙</div>
+<div id="panel">
+  <div style="font-family:'Orbitron'; color:#4af; font-size:16px; margin-bottom:15px;">HUD CONFIGURATION</div>
+  <label>Neural Link (Backend)
+    <input id="ws-url" value="ws://localhost:8000/ws"/>
+  </label>
+  <label>Primary Intelligence
+    <select id="groq-model">
+      <option value="llama-3.3-70b-versatile" selected>Llama 3.3 70B (Smartest)</option>
+      <option value="llama-3.1-8b-instant">Llama 3.1 8B (Fastest)</option>
+    </select>
+  </label>
+  <button style="margin-top:20px; width:100%; padding:10px; border:1px solid #4af;" onclick="reconnect()">SYNCHRONIZE</button>
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+// ─── Three.js Particle Orb ───────────────────────────────────────────────────
+const canvas = document.getElementById('orb');
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+renderer.setSize(260,260);
+renderer.setPixelRatio(window.devicePixelRatio);
+renderer.setClearColor(0x000000, 0);
+
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(60, 1, 0.1, 100);
+camera.position.z = 3.2;
+
+const PARTICLE_COUNT = 2800;
+const geo = new THREE.BufferGeometry();
+const positions = new Float32Array(PARTICLE_COUNT * 3);
+const initialPositions = new Float32Array(PARTICLE_COUNT * 3);
+const colors = new Float32Array(PARTICLE_COUNT * 3);
+const phases = new Float32Array(PARTICLE_COUNT);
+
+for (let i = 0; i < PARTICLE_COUNT; i++) {
+  const phi = Math.acos(2 * Math.random() - 1);
+  const theta = 2 * Math.PI * Math.random();
+  const r = 1 + (Math.random() - 0.5) * 0.06;
+  const x = r * Math.sin(phi) * Math.cos(theta);
+  const y = r * Math.sin(phi) * Math.sin(theta);
+  const z = r * Math.cos(phi);
+  positions[i*3] = initialPositions[i*3] = x;
+  positions[i*3+1] = initialPositions[i*3+1] = y;
+  positions[i*3+2] = initialPositions[i*3+2] = z;
+  colors[i*3] = 0.1 + Math.random() * 0.2;
+  colors[i*3+1] = 0.5 + Math.random() * 0.3;
+  colors[i*3+2] = 1.0;
+  phases[i] = Math.random() * Math.PI * 2;
+}
+
+geo.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+geo.setAttribute('color', new THREE.BufferAttribute(colors, 3));
+
+const mat = new THREE.PointsMaterial({
+  size: 0.018, vertexColors: true, transparent: true, opacity: 0.85,
+  blending: THREE.AdditiveBlending, depthWrite: false
+});
+
+const orb = new THREE.Points(geo, mat);
+scene.add(orb);
+
+let orbState = 'idle'; // idle | listening | thinking | speaking
+let audioEnergy = 0;
+let targetEnergy = 0;
+let time = 0;
+
+const STATE_COLORS = {
+  idle:      [0.1, 0.5, 1.0],
+  listening: [0.0, 1.0, 0.5],
+  thinking:  [1.0, 0.7, 0.0],
+  speaking:  [0.2, 0.8, 1.0],
+};
+
+function setOrbState(state) {
+  orbState = state;
+  const c = STATE_COLORS[state] || STATE_COLORS.idle;
+  const pos = geo.attributes.position.array;
+  const col = geo.attributes.color.array;
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
+    col[i*3]   = c[0] * (0.6 + Math.random() * 0.4);
+    col[i*3+1] = c[1] * (0.6 + Math.random() * 0.4);
+    col[i*3+2] = c[2] * (0.8 + Math.random() * 0.2);
+  }
+  geo.attributes.color.needsUpdate = true;
+}
+
+function animate() {
+  requestAnimationFrame(animate);
+  time += 0.012;
+
+  audioEnergy += (targetEnergy - audioEnergy) * 0.08;
+
+  const speed = orbState === 'listening' ? 0.4 :
+                orbState === 'thinking'  ? 0.9 :
+                orbState === 'speaking'  ? 0.6 : 0.15;
+
+  const pos = geo.attributes.position.array;
+  for (let i = 0; i < PARTICLE_COUNT; i++) {
+    const ix = initialPositions[i*3];
+    const iy = initialPositions[i*3+1];
+    const iz = initialPositions[i*3+2];
+    const p = phases[i];
+    const wave = Math.sin(time * speed + p) * (0.04 + audioEnergy * 0.22);
+    const noise = Math.sin(time * 0.3 + p * 2) * 0.015;
+    const scale = 1 + wave + noise;
+    pos[i*3]   = ix * scale;
+    pos[i*3+1] = iy * scale;
+    pos[i*3+2] = iz * scale;
+  }
+  geo.attributes.position.needsUpdate = true;
+
+  orb.rotation.y += 0.003 + (orbState === 'thinking' ? 0.01 : 0);
+  orb.rotation.x = Math.sin(time * 0.1) * 0.05;
+
+  renderer.render(scene, camera);
+}
+animate();
+
+// ─── WebSocket ───────────────────────────────────────────────────────────────
+let ws = null;
+let reconnectTimer = null;
+
+function connect() {
+  const url = document.getElementById('ws-url').value;
+  ws = new WebSocket(url);
+  ws.onopen = () => { 
+    setStatus('READY'); 
+    setOrbState('idle'); 
+    document.getElementById('reply').textContent = 'Systems online. Welcome home, Vaibhav.';
+  };
+  ws.onmessage = (e) => handleMessage(JSON.parse(e.data));
+  ws.onclose = () => {
+    setStatus('DISCONNECTED');
+    reconnectTimer = setTimeout(connect, 3000);
+  };
+  ws.onerror = () => setStatus('ERROR');
+}
+
+function reconnect() {
+  if (ws) ws.close();
+  clearTimeout(reconnectTimer);
+  connect();
+}
+
+function handleMessage(msg) {
+  if (msg.type === 'state') {
+    setOrbState(msg.state);
+    setStatus(msg.state.toUpperCase());
+  } else if (msg.type === 'text') {
+    document.getElementById('reply').textContent = msg.text;
+  } else if (msg.type === 'audio') {
+    playAudio(msg.audio, msg.format || 'mp3');
+    targetEnergy = 0.7;
+    setTimeout(() => { targetEnergy = 0; }, 4000);
+  } else if (msg.type === 'error') {
+    document.getElementById('reply').textContent = '⚠ ' + msg.error;
+    setStatus('ERROR');
+    setOrbState('idle');
+  }
+}
+
+function playAudio(b64, format) {
+  const binary = atob(b64);
+  const bytes = new Uint8Array(binary.length);
+  for (let i = 0; i < binary.length; i++) bytes[i] = binary.charCodeAt(i);
+  const blob = new Blob([bytes], {type: `audio/${format}`});
+  const url = URL.createObjectURL(blob);
+  const audio = new Audio(url);
+  audio.onended = () => { setOrbState('idle'); setStatus('IDLE'); };
+  audio.play().catch(()=>{});
+}
+
+// ─── Voice Input ─────────────────────────────────────────────────────────────
+let recognition = null;
+let isListening = false;
+let wakeWordActive = false;
+
+function initSpeech() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) { alert('Speech recognition not supported. Use Chrome.'); return null; }
+  const r = new SR();
+  r.continuous = false;
+  r.interimResults = true;
+  r.lang = 'en-US';
+
+  r.onstart = () => { setOrbState('listening'); setStatus('LISTENING'); };
+  r.onend = () => {
+    document.getElementById('voice-btn').classList.remove('listening');
+    // Auto-restart listening for a true hands-free experience
+    if (isListening) {
+        setTimeout(() => {
+            try { recognition.start(); } catch(e) {}
+        }, 300);
+    } else {
+        if (orbState === 'listening') { setOrbState('idle'); setStatus('IDLE'); }
+    }
+  };
+  r.onerror = (e) => { console.warn('SR error:', e.error); r.onend(); };
+
+  r.onresult = (e) => {
+    let interim = '', final = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      const t = e.results[i][0].transcript;
+      e.results[i].isFinal ? final += t : interim += t;
+    }
+    document.getElementById('transcript').textContent = final || interim;
+    if (final.trim()) sendToJarvis(final.trim());
+  };
+  return r;
+}
+
+function toggleListen() {
+  if (!recognition) recognition = initSpeech();
+  if (!recognition) return;
+  const btn = document.getElementById('voice-btn');
+  if (isListening) {
+    recognition.stop();
+    isListening = false;
+    btn.classList.remove('listening');
+  } else {
+    recognition.start();
+    isListening = true;
+    btn.classList.add('listening');
+  }
+}
+
+function sendToJarvis(text) {
+  if (!ws || ws.readyState !== WebSocket.OPEN) { reconnect(); return; }
+  document.getElementById('transcript').textContent = text;
+  ws.send(JSON.stringify({ text }));
+}
+
+// ─── Wake word (optional) ────────────────────────────────────────────────────
+function startContinuousListening() {
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if (!SR) return;
+  const r = new SR();
+  r.continuous = true;
+  r.interimResults = false;
+  r.lang = 'en-US';
+  r.onresult = (e) => {
+    const t = e.results[e.results.length-1][0].transcript.toLowerCase();
+    const wake = document.getElementById('wake-word').value.toLowerCase();
+    if (wake && t.includes(wake)) toggleListen();
+  };
+  r.onend = () => r.start();
+  r.start();
+}
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+function setStatus(s) { document.getElementById('status').textContent = s; }
+function setOrbState(s) { orbState = s; }
+
+async function clearMemory() {
+  const base = document.getElementById('ws-url').value.replace('ws://','http://').replace('/ws','');
+  await fetch(base + '/memory/clear', {method:'DELETE'});
+  document.getElementById('reply').textContent = 'Memory cleared.';
+}
+
+async function checkHealth() {
+  const base = document.getElementById('ws-url').value.replace('ws://','http://').replace('/ws','');
+  const r = await fetch(base + '/health').catch(()=>null);
+  if (!r) { document.getElementById('reply').textContent = 'Backend offline.'; return; }
+  const d = await r.json();
+  document.getElementById('reply').textContent =
+    `Groq: ${d.groq?'✓':'✗'} | Claude: ${d.claude?'✓':'✗'} | ElevenLabs: ${d.elevenlabs?'✓':'✗'}`;
+}
+
+// Keyboard shortcut: Space to listen
+window.addEventListener('keydown', e => {
+  if (e.code === 'Space' && e.target === document.body) { e.preventDefault(); toggleListen(); }
+});
+
+connect();
+// startContinuousListening(); // Uncomment for always-on wake word
+</script>
+</body>
+</html>
