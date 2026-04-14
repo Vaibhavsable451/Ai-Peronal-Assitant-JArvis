@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+websockets
+groq
+anthropic
+elevenlabs
+python-dotenv
+httpx
