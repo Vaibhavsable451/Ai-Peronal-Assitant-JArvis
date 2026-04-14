@@ -486,7 +486,16 @@ function initSpeech() {
         if (orbState === 'listening') { setOrbState('idle'); setStatus('IDLE'); }
     }
   };
-  r.onerror = (e) => { console.warn('SR error:', e.error); r.onend(); };
+  r.onerror = (e) => { 
+    console.warn('SR error:', e.error); 
+    if (e.error === 'not-allowed') {
+        document.getElementById('reply').textContent = '⚠ Microphone access denied. Please allow mic in browser settings.';
+        isListening = false;
+    } else if (e.error === 'no-speech') {
+        setStatus('IDLE');
+    }
+    r.onend(); 
+  };
 
   r.onresult = (e) => {
     let interim = '', final = '';
