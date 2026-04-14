@@ -405,7 +405,7 @@ async def memory_clear():
 @app.on_event("startup")
 async def startup():
     init_db()
-    print("✅ JARVIS backend started")
+    print("[SUCCESS] JARVIS backend started")
     print(f"   Groq model   : {GROQ_MODEL}")
     print(f"   Claude model : {CLAUDE_MODEL}")
-    print(f"   ElevenLabs   : {'✓' if ELEVENLABS_KEY else '✗ (macOS say fallback)'}")
+    print(f"   ElevenLabs   : {'YES' if ELEVENLABS_KEY else 'NO (macOS say fallback)'}")
