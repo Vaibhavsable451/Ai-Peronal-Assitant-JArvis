@@ -27,15 +27,20 @@ import sqlite3
 import datetime
 import httpx
 from dotenv import load_dotenv
-from fastapi import FastAPI, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, WebSocket, WebSocketDisconnect, StaticFiles
 from fastapi.responses import HTMLResponse
 from fastapi.middleware.cors import CORSMiddleware
 from groq import AsyncGroq
 import anthropic
 
+from fastapi.staticfiles import StaticFiles
+
 load_dotenv()
 
 app = FastAPI(title="JARVIS Voice AI")
+
+# Serve static files (like your background image)
+app.mount("/static", StaticFiles(directory="."), name="static")
 
 app.add_middleware(
     CORSMiddleware,

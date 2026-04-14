@@ -18,7 +18,7 @@
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('desktop-wallpaper-jarvis-iron-man-iphone-list-friday-iron-man.jpg') no-repeat center center fixed;
+    background: linear-gradient(rgba(0,0,0,0.6), rgba(0,0,0,0.6)), url('/static/desktop-wallpaper-jarvis-iron-man-iphone-list-friday-iron-man.jpg') no-repeat center center fixed;
     background-size: cover;
   }
 
@@ -404,7 +404,15 @@ let ws = null;
 let reconnectTimer = null;
 
 function connect() {
-  const url = document.getElementById('ws-url').value;
+  let url = document.getElementById('ws-url').value;
+  
+  // Auto-detect production URL if running on Render
+  if (window.location.hostname !== 'localhost' && window.location.hostname !== '127.0.0.1') {
+      const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+      url = `${protocol}//${window.location.host}/ws`;
+      document.getElementById('ws-url').value = url;
+  }
+
   ws = new WebSocket(url);
   ws.onopen = () => { 
     setStatus('READY'); 
