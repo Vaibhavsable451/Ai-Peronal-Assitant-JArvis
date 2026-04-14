@@ -303,15 +303,18 @@ async def text_to_speech_elevenlabs(text: str) -> bytes | None:
     return None
 
 def text_to_speech_fallback(text: str):
-    """Fallback TTS: macOS 'say' or Windows PowerShell speech."""
-    if os.name == "nt":
+    """Fallback TTS: macOS 'say', Windows PowerShell, or No-op for Linux."""
+    if sys.platform == "darwin":
+        # macOS fallback
+        subprocess.Popen(["say", "-v", "Daniel", text])
+    elif sys.platform == "win32":
         # Windows PowerShell speech
         clean_text = text.replace('"', "'")
         cmd = f'Add-Type -AssemblyName System.Speech; (New-Object System.Speech.Synthesis.SpeechSynthesizer).Speak("{clean_text}")'
         subprocess.Popen(["powershell", "-Command", cmd])
     else:
-        # macOS fallback
-        subprocess.Popen(["say", "-v", "Daniel", text])
+        # Linux / Render: Cloud servers usually don't have speakers attached
+        print(f"[TTS Fallback] {text}")
 
 # ─── WebSocket Handler ──────────────────────────────────────────────────────────
 
