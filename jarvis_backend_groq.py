@@ -21,6 +21,7 @@ import os
 import json
 import base64
 import asyncio
+import sys
 import subprocess
 import webbrowser
 import sqlite3
@@ -102,7 +103,7 @@ def search_memory(query: str, limit: int = 6) -> list[dict]:
 
 def run_applescript(script: str) -> str:
     """Helper to run AppleScript (macOS only)."""
-    if os.name != "posix":  # macOS is posix, Windows is nt
+    if sys.platform != "darwin":
         return "This feature (AppleScript) is only available on macOS."
     try:
         result = subprocess.run(
@@ -240,8 +241,11 @@ async def get_ai_response(user_text: str, history: list) -> str:
         webbrowser.open("https://maps.google.com")
         return "Navigating via Google Maps."
     elif "open notepad" in text_lower:
-        subprocess.Popen(["notepad.exe"])
-        return "Opening Notepad for you, sir."
+        if os.name == "nt":
+            subprocess.Popen(["notepad.exe"])
+            return "Opening Notepad for you, sir."
+        else:
+            return "Notepad is not available on this system, sir."
     elif any(k in text_lower for k in ["search for", "look up", "google search"]):
         query = text_lower.replace("search for", "").replace("look up", "").replace("google search", "").strip()
         url = f"https://www.google.com/search?q={query.replace(' ', '+')}"
